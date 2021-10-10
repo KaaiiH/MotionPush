@@ -1,6 +1,6 @@
-# Organize Imports 
+# Organize Imports
 import cv2
-import imutils 
+import imutils
 import numpy as np
 from sklearn import metrics
 
@@ -10,7 +10,7 @@ BackGround = None
 def video_average(frame_image, Average_Framing):
     global BackGround
 
-    # initialize the background 
+    # initialize the background
     if BackGround is None:
         BackGround = frame_image.copy().astype("float")
         return
@@ -28,10 +28,10 @@ def segment(frame_image, threshold_amount=25):
 
     # This is the threshold of the differnce imaging to get foreground imaging
     Amount_Thresholded = cv2.threshold(difference, threshold_amount, 255, cv2.THRESH_BINARY)[1]
-    
+
     # This gets the contours in the thresholded imaging
     (count,_) = cv2.findContours(Amount_Thresholded.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
+
 
     # returns None if no countours are detected
     if len(count) == 0:
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     web_camera = cv2.VideoCapture(0)
 
     # These are the region of intersted coordinates (for edges of that part of frame)
-    top_edge, right_edge, bottom_edge, left_edge = 10, 350, 230, 590
+    top_edge, right_edge, bottom_edge, left_edge = 10, 350, 440, 830
 
     # initializes the number of frames
     number_of_frames = 0
@@ -127,22 +127,28 @@ if __name__ == "__main__":
     # Timer_Tracking_Var
     Timer_Track = 0
 
-    # Interal Hand Signal "2" Tracker
+    # Internal Hand Signal "2" Tracker
     Commit_Var = 0
 
-    # Interal Hand Signal "2" Tracker
+    # Internal Hand Signal "1" Tracker
     Push_Var = 0
 
-    # Interal Hand Signal "2" Tracker
+    # Internal Hand Signal "0" Tracker
+    Add_Var = 0
+
+    # Internal Hand Signal "3" Tracker
     Pull_Var = 0
 
-    # This will kep looping till it is interrupted 
+    # Internal Hand Signal "4" Tracker
+    Check_Out_Var = 0
+
+    # This will kep looping till it is interrupted
     while(True):
 
         # The gets the current frame
         (grabbed, current_frame) = web_camera.read()
 
-        # The frame is resized 
+        # The frame is resized
         current_frame = imutils.resize(current_frame, width=700)
 
         # This flips the frame to make sure the current frame does not look relfected
@@ -161,16 +167,16 @@ if __name__ == "__main__":
         graying = cv2.cvtColor(ROI, cv2.COLOR_BGR2GRAY)
         graying = cv2.GaussianBlur(graying, (7, 7), 0)
 
-        # For getting the background, api will look at image until the 
-        # the threshold 
+        # For getting the background, api will look at image until the
+        # the threshold
         if number_of_frames < 30:
             video_average(graying, Weighted_Frames)
         else:
-            
+
             # This will segment the hand section of the frame
             hand_segment = segment(graying)
 
-            # This checks to see if the hand region is segmented 
+            # This checks to see if the hand region is segmented
             if hand_segment is not None:
 
                 # if this is true, unpack the threshold image and segmented region
@@ -193,7 +199,7 @@ if __name__ == "__main__":
         cv2.rectangle(copy_frame, (left_edge, top_edge), (right_edge, bottom_edge), (0, 255, 0), 2)
 
 
-        # The increments the number of frames 
+        # The increments the number of frames
         number_of_frames += 1
 
         # Increments until 60 for "2" seconds of duration in Time
@@ -201,22 +207,30 @@ if __name__ == "__main__":
 
         # Deals with incrementing amount of time for each handle signal
         if (Number_Of_Fingers == 2):
-            Commit_Var += 1
+            Add_Var += 1
         elif (Number_Of_Fingers == 1):
-            Push_Var += 1
+            Commit_Var += 1
         elif (Number_Of_Fingers == 0):
-            Pull_Var +=1
+            Push_Var += 1
+        elif (Number_Of_Fingers == 3):
+            Pull_Var += 1
+        elif (Number_Of_Fingers == 4):
+            Check_Out_Var += 1
         else:
             Active_Signal +=1
 
         # Handles Signal response within 2 second duration intervals
         if Timer_Track >= 30:
-            if Commit_Var >= 15:
+            if Add_Var >= 15:
                 Active_Signal = 2
-            elif Push_Var >=15:
+            elif Commit_Var >=15:
                 Active_Signal = 1
-            elif Pull_Var >= 15:
+            elif Push_Var >= 15:
                 Active_Signal = 0
+            elif Pull_Var >= 15:
+                Active_Signal = 3
+            elif Check_Out_Var >= 15:
+                Active_Signal = 4
             else:
                 Active_Signal = 1000
 
@@ -225,7 +239,9 @@ if __name__ == "__main__":
             Commit_Var = 0
             Push_Var = 0
             Pull_Var = 0
-            Active_Signal = 1000            
+            Add_Var = 0
+            Check_Out_Var = 0
+            Active_Signal = 1000
 
 
 
@@ -236,13 +252,6 @@ if __name__ == "__main__":
         if key_press == ord("q"):
             break
 
-# This helps free up memory 
+# This helps free up memory
 web_camera.release()
 cv2.destroyAllWindows()
-
-
-
-
-            
-
-
