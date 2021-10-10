@@ -3,6 +3,7 @@ import cv2
 import imutils
 import numpy as np
 from sklearn import metrics
+import subprocess
 
 # Global Variables
 BackGround = None
@@ -102,6 +103,7 @@ def CountFingers(Amount_Thresholded, Amount_Segmented):
 
 if __name__ == "__main__":
 
+    
     # This initializes what is the "weighted" average for the framing
     Weighted_Frames = 0.5
 
@@ -142,6 +144,9 @@ if __name__ == "__main__":
     # Internal Hand Signal "4" Tracker
     Check_Out_Var = 0
 
+    # Ten Second Delay 
+    Start_Up_Delay = 0 
+
     # This will kep looping till it is interrupted
     while(True):
 
@@ -166,6 +171,7 @@ if __name__ == "__main__":
         # This converts the ROI to grayscale and adds blur to the frame
         graying = cv2.cvtColor(ROI, cv2.COLOR_BGR2GRAY)
         graying = cv2.GaussianBlur(graying, (7, 7), 0)
+
 
         # For getting the background, api will look at image until the
         # the threshold
@@ -192,7 +198,6 @@ if __name__ == "__main__":
                 # This draws the segmented region and then shows the frame
                 cv2.drawContours(copy_frame, [segmented_hand + (right_edge, top_edge)], -1, (0, 0, 255))
                 cv2.imshow("Thresholed", thresholded_hand)
-
 
 
         # This draws the segemented hand onto the frame
@@ -235,6 +240,30 @@ if __name__ == "__main__":
                 Active_Signal = 1000
 
             print(Active_Signal)
+
+        if Start_Up_Delay >= 300:
+            # For getting the background, api will look at image until the
+            # the threshold
+            if(Active_Signal == 4):
+                subprocess.call("gitcheckout.sh", shell=True)
+                print("Checkout Signal")
+
+            if(Active_Signal == 3):
+                subprocess.call("gitpull.sh", shell=True)
+                print("Pull Signal")
+
+            if(Active_Signal == 2):
+                subprocess.call("gitadd.sh", shell=True)
+                print("Add Signal")
+
+            if(Active_Signal == 1):
+                subprocess.call("gitcommit.sh", shell=True)
+                print("Commit Signal")
+
+            if(Active_Signal == 0):
+                subprocess.call("gitpush.sh", shell=True)
+                print("Push Signal")
+
             Timer_Track = 0
             Commit_Var = 0
             Push_Var = 0
@@ -242,7 +271,8 @@ if __name__ == "__main__":
             Add_Var = 0
             Check_Out_Var = 0
             Active_Signal = 1000
-
+        else: 
+            Start_Up_Delay += 1
 
 
         # This displays the frame with the segmented hnd in it
@@ -252,6 +282,6 @@ if __name__ == "__main__":
         if key_press == ord("q"):
             break
 
-# This helps free up memory
-web_camera.release()
-cv2.destroyAllWindows()
+    # This helps free up memory
+    web_camera.release()
+    cv2.destroyAllWindows()
