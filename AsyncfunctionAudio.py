@@ -4,13 +4,13 @@ import base64
 import json
 from configure import auth_key
 import pyaudio
- 
+
 FRAMES_PER_BUFFER = 3200
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 16000
 p = pyaudio.PyAudio()
- 
+
 # starts recording
 stream = p.open(
    format=FORMAT,
@@ -22,7 +22,7 @@ stream = p.open(
 
 # the AssemblyAI endpoint we're going to hit
 URL = "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000"
- 
+
 async def send_receive():
    print(f'Connecting websocket to url ${URL}')
    async with websockets.connect(
@@ -50,9 +50,9 @@ async def send_receive():
                except Exception as e:
                    assert False, "Not a websocket 4008 error"
                await asyncio.sleep(0.01)
-          
+
            return True
-      
+
        async def receive():
            while True:
                try:
@@ -64,7 +64,7 @@ async def send_receive():
                    break
                except Exception as e:
                    assert False, "Not a websocket 4008 error"
-      
+
        send_result, receive_result = await asyncio.gather(send(), receive())
 
 asyncio.run(send_receive())
