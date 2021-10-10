@@ -47,9 +47,9 @@ def CountFingers(Amount_Thresholded, Amount_Segmented):
 
     # This Finds the most Extreme points in the Convex Hull
     Extreme_Top_Section = tuple(Chull[Chull[:, :, 1].argmin()][0])
-    Extreme_Bottom_Section = tuple(Chull[Chull[:, :, 1].argmin()][0])
+    Extreme_Bottom_Section = tuple(Chull[Chull[:, :, 1].argmax()][0])
     Extreme_Left_Section = tuple(Chull[Chull[:, :, 1].argmin()][0])
-    Extreme_Right_Section = tuple(Chull[Chull[:, :, 1].argmin()][0])
+    Extreme_Right_Section = tuple(Chull[Chull[:, :, 1].argmax()][0])
 
     # This Finds the center of the palm
     Center_X = int((Extreme_Left_Section[0] + Extreme_Right_Section[0]) / 2)
@@ -94,6 +94,8 @@ def CountFingers(Amount_Thresholded, Amount_Segmented):
         # 25% of the circumference of the Circular ROI
         if ((Center_Y + (Center_Y * 0.25)) > (y_var + h_var)) and ((Circumference * 0.25) > number.shape[0]):
             finger_count += 1
+        if (finger_count == 5):
+            break
 
     return finger_count
 
@@ -107,7 +109,7 @@ if __name__ == "__main__":
     web_camera = cv2.VideoCapture(0)
 
     # These are the region of intersted coordinates (for edges of that part of frame)
-    top_edge, right_edge, bottom_edge, left_edge = 10, 350, 440, 830
+    top_edge, right_edge, bottom_edge, left_edge = 10, 350, 230, 590
 
     # initializes the number of frames
     number_of_frames = 0
@@ -118,6 +120,21 @@ if __name__ == "__main__":
     # This is a temporary variable to make updating print
     # less frequent. It too is initialized
     Temp_Var_Finger_Count = 0
+
+    # Active Signal
+    Active_Signal = 1000
+
+    # Timer_Tracking_Var
+    Timer_Track = 0
+
+    # Interal Hand Signal "2" Tracker
+    Commit_Var = 0
+
+    # Interal Hand Signal "2" Tracker
+    Push_Var = 0
+
+    # Interal Hand Signal "2" Tracker
+    Pull_Var = 0
 
     # This will kep looping till it is interrupted 
     while(True):
@@ -165,7 +182,6 @@ if __name__ == "__main__":
                 #if (Temp_Var_Finger_Count is not Number_Of_Fingers):
                 #   Number_Of_Fingers = Temp_Var_Finger_Count
                 Number_Of_Fingers = CountFingers(thresholded_hand, segmented_hand)
-                print(Number_Of_Fingers)
 
                 # This draws the segmented region and then shows the frame
                 cv2.drawContours(copy_frame, [segmented_hand + (right_edge, top_edge)], -1, (0, 0, 255))
@@ -179,6 +195,39 @@ if __name__ == "__main__":
 
         # The increments the number of frames 
         number_of_frames += 1
+
+        # Increments until 60 for "2" seconds of duration in Time
+        Timer_Track +=1
+
+        # Deals with incrementing amount of time for each handle signal
+        if (Number_Of_Fingers == 2):
+            Commit_Var += 1
+        elif (Number_Of_Fingers == 1):
+            Push_Var += 1
+        elif (Number_Of_Fingers == 0):
+            Pull_Var +=1
+        else:
+            Active_Signal +=1
+
+        # Handles Signal response within 2 second duration intervals
+        if Timer_Track >= 30:
+            if Commit_Var >= 15:
+                Active_Signal = 2
+            elif Push_Var >=15:
+                Active_Signal = 1
+            elif Pull_Var >= 15:
+                Active_Signal = 0
+            else:
+                Active_Signal = 1000
+
+            print(Active_Signal)
+            Timer_Track = 0
+            Commit_Var = 0
+            Push_Var = 0
+            Pull_Var = 0
+            Active_Signal = 1000            
+
+
 
         # This displays the frame with the segmented hnd in it
         key_press = cv2.waitKey(1) & 0xFF
